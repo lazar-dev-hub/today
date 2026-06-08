@@ -1,171 +1,59 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Jun 08, 2026 at 10:50 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- Create the PMS Database
+CREATE DATABASE IF NOT EXISTS PMS;
+USE PMS;
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+-- 1. Users Table
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'manager', 'customer', 'staff') NOT NULL
+);
 
+-- 2. Customer Table
+CREATE TABLE customer (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNIQUE, -- Optional: Links to a login account if applicable
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    phone_number VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+-- 3. Promotion Table
+CREATE TABLE promotion (
+    promotion_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    description TEXT,
+    discount_type ENUM('percentage', 'fixed_amount') NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status ENUM('active', 'expired', 'scheduled') DEFAULT 'scheduled',
+    CONSTRAINT chk_dates CHECK (end_date >= start_date)
+);
 
---
--- Database: `pms`
---
+-- 4. Vehicle Table
+CREATE TABLE vehicle (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY, -- Integer PK for faster indexing/joins
+    plate_number VARCHAR(20) NOT NULL UNIQUE,   -- Business key kept unique
+    brand VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    year_manufactured INT NOT NULL,
+    vehicle_type VARCHAR(50),
+    purchase_price DECIMAL(12, 2),
+    status ENUM('available', 'rented', 'sold', 'maintenance') DEFAULT 'available'
+);
 
--- --------------------------------------------------------
-
---
--- Table structure for table `customer`
---
-
-CREATE TABLE `customer` (
-  `customer_id` int(11) NOT NULL,
-  `firstName` varchar(100) NOT NULL,
-  `lastName` varchar(100) NOT NULL,
-  `email` varchar(150) NOT NULL,
-  `phoneNumber` varchar(50) DEFAULT NULL,
-  `createdAt` datetime DEFAULT current_timestamp(),
-  `status` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `promotion`
---
-
-CREATE TABLE `promotion` (
-  `promotion_id` int(11) NOT NULL,
-  `title` varchar(150) NOT NULL,
-  `description` text DEFAULT NULL,
-  `discount_type` varchar(50) DEFAULT NULL,
-  `discount_value` decimal(10,2) DEFAULT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
-  `status` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `promotion_vehicle`
---
-
-CREATE TABLE `promotion_vehicle` (
-  `promotion_id` int(11) NOT NULL,
-  `plate_number` varchar(50) NOT NULL,
-  `performance` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
-
-CREATE TABLE `users` (
-  `user_id` int(11) NOT NULL,
-  `userName` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `role` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `vehicle`
---
-
-CREATE TABLE `vehicle` (
-  `plate_number` varchar(50) NOT NULL,
-  `brand` varchar(100) NOT NULL,
-  `model` varchar(100) NOT NULL,
-  `yearv` int(11) NOT NULL,
-  `vehicle_type` varchar(50) DEFAULT NULL,
-  `purchase_price` decimal(12,2) DEFAULT NULL,
-  `status` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `customer`
---
-ALTER TABLE `customer`
-  ADD PRIMARY KEY (`customer_id`),
-  ADD UNIQUE KEY `email` (`email`);
-
---
--- Indexes for table `promotion`
---
-ALTER TABLE `promotion`
-  ADD PRIMARY KEY (`promotion_id`);
-
---
--- Indexes for table `promotion_vehicle`
---
-ALTER TABLE `promotion_vehicle`
-  ADD PRIMARY KEY (`promotion_id`,`plate_number`),
-  ADD KEY `plate_number` (`plate_number`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`user_id`),
-  ADD UNIQUE KEY `userName` (`userName`);
-
---
--- Indexes for table `vehicle`
---
-ALTER TABLE `vehicle`
-  ADD PRIMARY KEY (`plate_number`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `customer`
---
-ALTER TABLE `customer`
-  MODIFY `customer_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `promotion`
---
-ALTER TABLE `promotion`
-  MODIFY `promotion_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `promotion_vehicle`
---
-ALTER TABLE `promotion_vehicle`
-  ADD CONSTRAINT `promotion_vehicle_ibfk_1` FOREIGN KEY (`promotion_id`) REFERENCES `promotion` (`promotion_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `promotion_vehicle_ibfk_2` FOREIGN KEY (`plate_number`) REFERENCES `vehicle` (`plate_number`) ON DELETE CASCADE;
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- 5. Promotion_Vehicle Junction Table
+CREATE TABLE promotion_vehicle (
+    promotion_id INT,
+    vehicle_id INT,
+    performance TEXT, -- Notes on how well the promotion did for this vehicle
+    PRIMARY KEY (promotion_id, vehicle_id),
+    FOREIGN KEY (promotion_id) REFERENCES promotion(promotion_id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id) ON DELETE CASCADE
+);
